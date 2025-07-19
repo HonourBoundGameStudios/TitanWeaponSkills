@@ -5,8 +5,8 @@
 -- *
 -- * Titan Panel - Weapon Skills Addon
 -- * @Description: Displays the player's current weapon skills on Titan Panel
--- * @Version: 1.0
--- * @Date: 2025-
+-- * @Version: 1.0.0
+-- * @Date: Jul 19, 2025
 -- * @Author: Honour Bound Game Studios Inc.
 -- **************************************************************************
 
@@ -14,10 +14,7 @@
 local _G = getfenv(0);
 local ADDON_ID = "WeaponSkills" -- Short ID for the plugin
 local TITAN_BUTTON_NAME = "TitanPanel" .. ADDON_ID .. "Button" -- Full name of the Titan Panel button frame
-local VERSION = "1.0" -- Version of the addon
-
-local addon_conflict = false -- used for addon conflicts
-local updateTable = {ADDON_ID, TITAN_PANEL_UPDATE_BUTTON}
+local VERSION = "1.0.0" -- Version of the addon
 
 -- ****************************** Weapon Skill Types: ******************************
 -- Axes:                Used by classes like warriors, paladins, and rogues for melee combat.
@@ -58,10 +55,7 @@ local iconTable = {
                 }
 
 -- ******************************** Variables *******************************
-local AceTimer = LibStub("AceTimer-3.0")
-local L = LibStub("AceLocale-3.0"):GetLocale(TITAN_ID, true)
-local Timer = {};
-local TimerRunning = false
+TitanWeaponSkillsSaved = {}
 
 -- ******************************** Debugging *******************************
 local dbg = Titan_Debug:New(ADDON_ID)
@@ -69,13 +63,12 @@ dbg:EnableDebug(false)
 dbg:EnableTopic("Events", true) 
 dbg:EnableTopic("Flow", true)
 
-TitanWeaponSkillsSaved = {}
 
--- ******************************** Functions *******************************
 
+-- ******************************** RegEvent *******************************
 ---local Register event if not already registered
----@param plugin Button
----@param event string
+---@param plugin 
+---@param event
 local function RegEvent(plugin, event)
 	if not plugin:IsEventRegistered(event) then
 		plugin:RegisterEvent(event)
