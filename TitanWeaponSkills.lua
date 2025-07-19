@@ -137,6 +137,7 @@ local function OnLoad(self)
     }
 end
 
+-- ******************************** OnEvent *******************************
 ---local Handle events registered to plugin
 ---@param self Button
 ---@param event string
@@ -147,6 +148,8 @@ local function OnEvent(self, event, ...)
     TitanPanelButton_UpdateButton(ADDON_ID)
 end
 
+-- ******************************** GetWeaponSkillsList *******************************
+---local Get the list of weapon skills and their current levels
 function GetWeaponSkillsList(verticalAlignment)
     local allSkillsText = {}
     local numSkills = GetNumSkillLines()
@@ -232,10 +235,14 @@ function GetWeaponSkillsList(verticalAlignment)
     return combinedText
 end
 
+
+-- ******************************** GetButtonText *******************************
+---local Get the text to display on the button
 function GetButtonText()
     return GetWeaponSkillsList()
 end
 
+-- ******************************** OnClick *******************************
 ---local Handle events registered to plugin. Copies coordinates to chat line for shift-LeftClick
 ---@param self Button
 ---@param button string
@@ -251,12 +258,15 @@ local function OnClick(self, button)
 	end
 end
 
+-- ******************************** GetTooltipText *******************************
 -- Function to generate the tooltip text when hovering over the button
 -- This function will be called by Titan Panel to display detailed information.
 function GetTooltipText()
     return GetWeaponSkillsList(true)
 end
 
+-- ******************************** OnShow *******************************
+---local Handle the OnShow event for the Titan Panel button
 local function OnShow(self)
 	local msg = "_OnShow"
 	dbg:Out("Flow", msg)
@@ -264,12 +274,16 @@ local function OnShow(self)
 	TitanPanelButton_UpdateButton(ADDON_ID);
 end
 
+-- ******************************** OnHide *******************************
+---local Handle the OnHide event for the Titan Panel button
 local function OnHide(self)
     local msg = "_OnHide"
     dbg:Out("Flow", msg)
     Events("unregister", "_OnHide")    
 end
     
+-- ******************************** CreateTitanWeaponSkillsButton *******************************
+---local Create the Titan Panel button for the Weapon Skills addon
 local function CreateTitanWeaponSkillsButton()
     if _G[TITAN_BUTTON_NAME] then
         return -- If already created, do nothing
@@ -299,6 +313,7 @@ local function CreateTitanWeaponSkillsButton()
 	end)
 end
 
+-- ******************************** Initialization *******************************
 -- Check if Titan Panel's global ID exists before attempting to create frames
 -- This ensures Titan Panel is loaded before we try to interact with it.
 if TITAN_ID then
