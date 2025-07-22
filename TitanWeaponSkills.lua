@@ -66,7 +66,7 @@ dbg:EnableDebug(false)
 dbg:EnableTopic("Events", true) 
 dbg:EnableTopic("Flow", true)
 
--- ******************************** RegEvent *******************************
+-- ******************************** RegisterEvent *******************************
 ---local Register event if not already registered
 ---@param plugin 
 ---@param event
@@ -80,14 +80,14 @@ end
 ---@param action string
 ---@param reason string
 local function Events(action, reason)
-	local plugin = TitanUtils_GetPlugin(ADDON_ID);
+	local frame = _G[TITAN_BUTTON_NAME]
 
 	if action == "register" then
-        RegisterEvent(plugin, "CHAT_MSG_SKILL")
-        RegisterEvent(plugin, "PLAYER_LEVEL_UP")
+        RegisterEvent(frame, "CHAT_MSG_SKILL")
+        RegisterEvent(frame, "PLAYER_LEVEL_UP")
 	elseif action == "unregister" then
-        plugin:UnregisterEvent("CHAT_MSG_SKILL")
-        plugin:UnregisterEvent("PLAYER_LEVEL_UP")
+        frame:UnregisterEvent("CHAT_MSG_SKILL")
+        frame:UnregisterEvent("PLAYER_LEVEL_UP")
 	else
 		-- action unknown ???
 	end
@@ -154,6 +154,9 @@ local function OnEvent(self, event, ...)
     end
 end
 
+-- ******************************** isWeaponSkill *******************************
+---local Check if the skill is a weapon skill
+---@param skillName string
 function isWeaponSkill(skillName)  
     return skillName:find("Axe") or 
            skillName:find("Bow") or
@@ -245,8 +248,6 @@ end
 -- ******************************** GetWeaponSkillsList *******************************
 ---local Get the list of weapon skills and their current levels
 function GetWeaponSkillsList(verticalAlignment)
-    local plugin = TitanUtils_GetPlugin(ADDON_ID)
-
     local allSkillsTable = {}
     local numSkills = GetNumSkillLines()
 
@@ -288,7 +289,9 @@ end
 ---@param button string
 local function OnClick(self, button)
 	if (button == "LeftButton") then
-		if (IsShiftKeyDown()) then
+        PlaySound(sfkIndex)
+
+        if (IsShiftKeyDown()) then
 			local activeWindow = ChatEdit_GetActiveWindow();
 			if (activeWindow) then
 				local message = GetWeaponSkillsList(false)
@@ -329,8 +332,8 @@ local function CreateTitanButton()
         return -- If already created, do nothing
     end
 
-    local f = CreateFrame("Frame", nil, UIParent)
-    local window = CreateFrame("Button", TITAN_BUTTON_NAME, f, "TitanPanelComboTemplate")
+    local frame = CreateFrame("Frame", nil, UIParent)
+    local window = CreateFrame("Button", TITAN_BUTTON_NAME, frame, "TitanPanelComboTemplate")
     window:SetFrameStrata("FULLSCREEN")
     OnLoad(window)
 
