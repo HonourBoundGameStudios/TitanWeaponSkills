@@ -15,6 +15,15 @@ local _G = getfenv(0);
 local ADDON_ID = "WeaponSkills" -- Short ID for the plugin
 local TITAN_BUTTON_NAME = "TitanPanel" .. ADDON_ID .. "Button" -- Full name of the Titan Panel button frame
 local VERSION = "1.1.0" -- Version of the addon
+local Colors = {
+                White = "|cffffffff",
+                Yellow = "|cffffff00",
+                Orange = "|cffffa500",
+                Red = "|cffff0000",
+                Green = "|cff00ff00",
+                LightGray = "|cffbbbbbb",
+                Reset = "|r" -- Reset color
+            }
 
 -- ****************************** Weapon Skill Types: ******************************
 -- Axes:                Used by classes like warriors, paladins, and rogues for melee combat.
@@ -182,20 +191,20 @@ function FormatSkillRank(skillRank, skillMaxRank, verticalAlignment)
 
     -- Color the currentSkillText based on its value
     if skillRank == skillMaxRank then
-        currentSkillRankText = "|cff00ff00" .. currentSkillRankText .. "|r" -- Green for maxed skill
+        currentSkillRankText = Colors.Green .. currentSkillRankText .. Colors.Reset -- Green for maxed skill
     elseif skillRank / skillMaxRank >= 0.90 then
-        currentSkillRankText = "|cffffff00" .. currentSkillRankText .. "|r" -- Yellow for medium skill
+        currentSkillRankText = Colors.Yellow .. currentSkillRankText .. Colors.Reset -- Yellow for medium skill
     elseif skillRank / skillMaxRank >= 0.80 then
-        currentSkillRankText = "|cffffa500" .. currentSkillRankText .. "|r" -- Orange for high skill
+        currentSkillRankText = Colors.Orange .. currentSkillRankText .. Colors.Reset -- Orange for high skill
     else
-        currentSkillRankText = "|cffff0000" .. currentSkillRankText .. "|r" -- Red for low skill
+        currentSkillRankText = Colors.Red .. currentSkillRankText .. Colors.Reset -- Red for low skill
     end
 
-    -- Light grey for maxSkill
+    -- Light grey for maxSkill unless it is maxed
     if skillRank == skillMaxRank then
-        currentSkillRankText = currentSkillRankText .. "|cff00ff00" .. "/" .. skillMaxRank .. "|r"
+        currentSkillRankText = currentSkillRankText .. Colors.Green .. "/" .. skillMaxRank .. Colors.Reset
     else
-        currentSkillRankText = currentSkillRankText .. "|cbbbbbbbb" .. "/" .. skillMaxRank .. "|r"
+        currentSkillRankText = currentSkillRankText .. Colors.LightGray .. "/" .. skillMaxRank .. Colors.Reset
     end
 
     return currentSkillRankText
@@ -237,7 +246,7 @@ function FormatSkillName(skillName, verticalAlignment)
     local skillNameText = ""
 
     if plugin.controlVariables.ShowSkillLabels or verticalAlignment then
-        skillNameText = "|cffffffff" .. skillName .. ": |r"
+        skillNameText = Colors.White .. skillName .. ": " .. Colors.Reset
     else
         skillNameText = ""
     end
