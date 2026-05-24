@@ -70,10 +70,11 @@ local sfkIndex = 6518 -- WISP sound
 TitanWeaponSkillsSaved = {}
 
 -- ******************************** Debugging *******************************
-local dbg = Titan_Debug:New(ADDON_ID)
-dbg:EnableDebug(false)
-dbg:EnableTopic("Events", true) 
-dbg:EnableTopic("Flow", true)
+-- Titan_Debug is a plain table; register topics by adding keys under ADDON_ID.
+-- Set a topic to true to enable output for that topic.
+Titan_Debug[ADDON_ID] = {}
+Titan_Debug[ADDON_ID].Events = false
+Titan_Debug[ADDON_ID].Flow   = false
 
 -- ******************************** RegisterEvent *******************************
 ---local Register event if not already registered
@@ -104,7 +105,7 @@ local function Events(action, reason)
 	local msg = ""
 		.. " " .. tostring(action) .. ""
 		.. " " .. tostring(reason) .. ""
-	dbg:Out("Events", msg)
+	Titan_Debug.Out(ADDON_ID, "Events", msg)
 end
 
 -- ******************************** OnLoad *******************************
@@ -133,18 +134,18 @@ local function OnLoad(self)
         controlVariables = {
             ShowIcon = true,
             DisplayOnRightSide = false,
-            SkillIncreaseSoundNotification = true, -- Enable sound notification for skill increases
-            ShowSkillLabels = true, -- Show skill labels in the tooltip
-            ShowSkillIcons = true, -- Show skill icons in the tooltip
-            ShowSmallSkillIcons = true, -- Show small skill icons in the tooltip
+            SkillIncreaseSoundNotification = true,
+            ShowSkillLabels = true,
+            ShowSkillIcons = true,
+            ShowLargeSkillIcons = false, -- false = small icons (16x16), true = large icons (24x24)
         },
         savedVariables = {
             ShowIcon = 1,
             DisplayOnRightSide = 0,
             SkillIncreaseSoundNotification = 1,
-            ShowSkillLabels = 1, -- Default to showing skill labels
-            ShowSkillIcons = 1, -- Default to showing skill icons
-            ShowSmallSkillIcons = 1, -- Default to showing small skill icons
+            ShowSkillLabels = 1,
+            ShowSkillIcons = 1,
+            ShowLargeSkillIcons = 0,
         }
     }
 end
@@ -155,9 +156,9 @@ end
 ---@param event string
 ---@param ... any
 local function OnEvent(self, event, ...)
-	dbg:Out("Events", "_OnEvent" .. " " .. tostring(event) .. "")
+	Titan_Debug.Out(ADDON_ID, "Events", "_OnEvent" .. " " .. tostring(event) .. "")
 
-    if event == "CHAT_MSG_SKILL" or "PLAYER_LEVEL_UP" then
+    if event == "CHAT_MSG_SKILL" or event == "PLAYER_LEVEL_UP" then
         PlaySound(sfkIndex)
         TitanPanelButton_UpdateButton(ADDON_ID)
     end
@@ -321,7 +322,7 @@ end
 ---local Handle the OnShow event for the Titan Panel button
 local function OnShow(self)
 	local msg = "_OnShow"
-	dbg:Out("Flow", msg)
+	Titan_Debug.Out(ADDON_ID, "Flow", msg)
 	Events("register", "_OnShow")
 	TitanPanelButton_UpdateButton(ADDON_ID);
 end
@@ -330,7 +331,7 @@ end
 ---local Handle the OnHide event for the Titan Panel button
 local function OnHide(self)
     local msg = "_OnHide"
-    dbg:Out("Flow", msg)
+    Titan_Debug.Out(ADDON_ID, "Flow", msg)
     Events("unregister", "_OnHide")    
 end
     
@@ -432,12 +433,12 @@ end
 -- Check if Titan Panel's global ID exists before attempting to create frames
 -- This ensures Titan Panel is loaded before we try to interact with it.
 if TITAN_ID then
-    dbg:Out("Flow", "TitanWeaponSkills: TITAN_ID found. Attempting to create button frame.")
+    Titan_Debug.Out(ADDON_ID, "Flow", "TitanWeaponSkills: TITAN_ID found. Attempting to create button frame.")
     CreateTitanButton()
 else
     -- If TITAN_ID is not immediately available, we might still be too early.
     -- This scenario is less likely with ##Dependencies, but good to be aware.
-    dbg:Out("Flow", "TitanWeaponSkills: TITAN_ID not found at initial load. This addon might load before Titan Panel.")
+    Titan_Debug.Out(ADDON_ID, "Flow", "TitanWeaponSkills: TITAN_ID not found at initial load. This addon might load before Titan Panel.")
     -- For robustness, you could add an ADDON_LOADED listener for "Titan" here
     -- if you consistently find TITAN_ID missing at this point.
     -- However, ##Dependencies: Titan in .toc should generally handle this.
