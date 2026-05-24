@@ -108,6 +108,72 @@ local function Events(action, reason)
 	Titan_Debug.Out(ADDON_ID, "Events", msg)
 end
 
+-- ******************************** PrepareWeaponSkillsMenu *******************************
+---local Build the right-click dropdown menu (UIDropDownMenu scheme)
+local function PrepareWeaponSkillsMenu()
+    TitanPanelRightClickMenu_AddTitle(TitanPlugins[ADDON_ID].menuText)
+
+    local level = TitanPanelRightClickMenu_GetDropdownLevel()
+
+    -- ************************************** --
+    -- Skill Label Toggle
+    local info = {}
+    info.text = "Skill Labels"
+    info.func = function()
+        TitanPanelRightClickMenu_ToggleVar({ADDON_ID, "ShowSkillLabels"})
+        TitanPanelButton_UpdateButton(ADDON_ID)
+    end
+    info.checked = TitanUtils_Ternary(TitanGetVar(ADDON_ID, "ShowSkillLabels"), 1, nil)
+    info.keepShownOnClick = 1
+    TitanPanelRightClickMenu_AddButton(info, level)
+
+    -- ************************************** --
+    -- Skill Icons Toggle
+    info = {}
+    info.text = "Skill Icons"
+    info.func = function()
+        TitanPanelRightClickMenu_ToggleVar({ADDON_ID, "ShowSkillIcons"})
+        TitanPanelButton_UpdateButton(ADDON_ID)
+    end
+    info.checked = TitanUtils_Ternary(TitanGetVar(ADDON_ID, "ShowSkillIcons"), 1, nil)
+    info.keepShownOnClick = 1
+    TitanPanelRightClickMenu_AddButton(info, level)
+
+    -- ************************************** --
+    -- Large Skill Icons Toggle
+    info = {}
+    info.text = "Large Skill Icons"
+    info.func = function()
+        TitanPanelRightClickMenu_ToggleVar({ADDON_ID, "ShowLargeSkillIcons"})
+        TitanPanelButton_UpdateButton(ADDON_ID)
+    end
+    info.checked = TitanUtils_Ternary(TitanGetVar(ADDON_ID, "ShowLargeSkillIcons"), 1, nil)
+    info.keepShownOnClick = 1
+    TitanPanelRightClickMenu_AddButton(info, level)
+
+    TitanPanelRightClickMenu_AddSpacer()
+
+    -- ************************************** --
+    -- Audio Notification Toggle
+    info = {}
+    info.text = "Audio Notification"
+    info.func = function()
+        TitanPanelRightClickMenu_ToggleVar({ADDON_ID, "PlayAudioNotification"})
+    end
+    info.checked = TitanUtils_Ternary(TitanGetVar(ADDON_ID, "PlayAudioNotification"), 1, nil)
+    info.keepShownOnClick = 1
+    TitanPanelRightClickMenu_AddButton(info, level)
+
+    TitanPanelRightClickMenu_AddSpacer()
+
+    -- ************************************** --
+    -- Default Titan Panel Options
+    TitanPanelRightClickMenu_AddToggleIcon(ADDON_ID)
+    TitanPanelRightClickMenu_AddToggleRightSide(ADDON_ID)
+    TitanPanelRightClickMenu_AddSpacer()
+    TitanPanelRightClickMenu_AddHide(ADDON_ID)
+end
+
 -- ******************************** OnLoad *******************************
 ---local Initialize the addon when loaded
 local function OnLoad(self)
@@ -134,18 +200,18 @@ local function OnLoad(self)
         controlVariables = {
             ShowIcon = true,
             DisplayOnRightSide = false,
-            SkillIncreaseSoundNotification = true,
             ShowSkillLabels = true,
             ShowSkillIcons = true,
-            ShowLargeSkillIcons = false, -- false = small icons (16x16), true = large icons (24x24)
+            ShowLargeSkillIcons = true,
+            PlayAudioNotification = true,
         },
         savedVariables = {
-            ShowIcon = 1,
-            DisplayOnRightSide = 0,
-            SkillIncreaseSoundNotification = 1,
-            ShowSkillLabels = 1,
-            ShowSkillIcons = 1,
-            ShowLargeSkillIcons = 0,
+            ShowIcon = true,
+            DisplayOnRightSide = false,
+            ShowSkillLabels = true,
+            ShowSkillIcons = true,
+            ShowLargeSkillIcons = true,
+            PlayAudioNotification = true,
         }
     }
 end
@@ -159,7 +225,9 @@ local function OnEvent(self, event, ...)
 	Titan_Debug.Out(ADDON_ID, "Events", "_OnEvent" .. " " .. tostring(event) .. "")
 
     if event == "CHAT_MSG_SKILL" or event == "PLAYER_LEVEL_UP" then
-        PlaySound(sfkIndex)
+        if TitanGetVar(ADDON_ID, "PlayAudioNotification") then
+            PlaySound(sfkIndex)
+        end
         TitanPanelButton_UpdateButton(ADDON_ID)
     end
 end
@@ -214,11 +282,10 @@ end
 -- ******************************** FormatSkillIcon *******************************
 ---local Format the skill icon for display
 function FormatSkillIcon(skillName, verticalAlignment)
-    local plugin = TitanUtils_GetPlugin(ADDON_ID)
     local skillIcon = ""
 
     -- Check if the plugin is configured to show skill icons
-    if plugin.controlVariables.ShowSkillIcons or verticalAlignment then
+    if TitanGetVar(ADDON_ID, "ShowSkillIcons") or verticalAlignment then
 
         -- Check if the skill is a weapon skill and get the icon path
         local skillNameWithoutDashOrSpaces = skillName:gsub("-", "_")
@@ -227,7 +294,7 @@ function FormatSkillIcon(skillName, verticalAlignment)
 
         -- If the skill is a weapon skill, prepend the icon to the skill name
         if isWeaponSkill(skillName) then
-            if plugin.controlVariables.ShowLargeSkillIcons then
+            if TitanGetVar(ADDON_ID, "ShowLargeSkillIcons") then
                 -- Use standard icon size
                 skillIcon = "|T" .. iconPath .. ":24:24:0:0|t "
             else
@@ -243,10 +310,9 @@ end
 -- ******************************** FormatSkillName *******************************
 ---local Format the skill name for display
 function FormatSkillName(skillName, verticalAlignment)
-    local plugin = TitanUtils_GetPlugin(ADDON_ID)
     local skillNameText = ""
 
-    if plugin.controlVariables.ShowSkillLabels or verticalAlignment then
+    if TitanGetVar(ADDON_ID, "ShowSkillLabels") or verticalAlignment then
         skillNameText = Colors.White .. skillName .. ": " .. Colors.Reset
     else
         skillNameText = ""
@@ -291,24 +357,6 @@ end
 ---local Get the text to display on the button
 function GetButtonText()
     return GetWeaponSkillsList()
-end
-
--- ******************************** OnClick *******************************
----local Handle events registered to plugin. Copies coordinates to chat line for shift-LeftClick
----@param self Button
----@param button string
-local function OnClick(self, button)
-	if (button == "LeftButton") then
-        PlaySound(sfkIndex)
-
-        if (IsShiftKeyDown()) then
-			local activeWindow = ChatEdit_GetActiveWindow();
-			if (activeWindow) then
-				local message = GetWeaponSkillsList(false)
-				activeWindow:Insert(message);
-			end
-		end
-	end
 end
 
 -- ******************************** GetTooltipText *******************************
@@ -363,71 +411,12 @@ local function CreateTitanButton()
             OnEvent(self, event, ...) 
         end)
 
-	window:SetScript("OnClick", 
-	    function(self, button) 
-            OnClick(self, button);
+	window:SetScript("OnClick",
+	    function(self, button)
 		    TitanPanelButton_OnClick(self, button);
 	    end)
 end
 
---- Function to prepare the right-click menu for the addon.
--- This function is referenced by the plugin's registry (menuTextFunction).
-function PrepareWeaponSkillsMenu()
-    local plugin = TitanUtils_GetPlugin(ADDON_ID);
-    TitanPanelRightClickMenu_AddTitle(TitanPlugins[ADDON_ID].menuText);
-    
-    --local debugToggleButton = {};
-    --debugToggleButton.text = "Toggle Debug Output";
-    --debugToggleButton.func = function()
-    --    dbg:EnableDebug(not dbg.enabled);
-    --    TitanPanelButton_UpdateButton(ADDON_ID);
-    --end
-    --
-    --debugToggleButton.checked = dbg.enabled; -- Checkmark if debugging is enabled
-    --TitanPanelRightClickMenu_AddButton(debugToggleButton);
-
-    -- ************************************** --
-    -- Skill Label Toggle
-    local displaySkillLabelsButton = {};
-    displaySkillLabelsButton.text = "Skill Labels";
-    displaySkillLabelsButton.func = function()
-        plugin.controlVariables.ShowSkillLabels = not plugin.controlVariables.ShowSkillLabels;
-        TitanPanelButton_UpdateButton(ADDON_ID);
-    end
-    
-    displaySkillLabelsButton.checked = plugin.controlVariables.ShowSkillLabels;
-    TitanPanelRightClickMenu_AddButton(displaySkillLabelsButton);
-
-    -- ************************************** --
-    -- Skill Icons Toggle
-    local displaySkillIconsButton = {};
-    displaySkillIconsButton.text = "Skill Icons";
-    displaySkillIconsButton.func = function()
-        plugin.controlVariables.ShowSkillIcons = not plugin.controlVariables.ShowSkillIcons;
-        TitanPanelButton_UpdateButton(ADDON_ID);
-    end
-
-    displaySkillIconsButton.checked = plugin.controlVariables.ShowSkillIcons;
-    TitanPanelRightClickMenu_AddButton(displaySkillIconsButton);
-    
-    -- ************************************** --
-    -- Large Skill Icons Toggle
-    local displayLargeSkillIcons = {};
-    displayLargeSkillIcons.text = "Large Skill Icons";
-    displayLargeSkillIcons.func = function()
-        plugin.controlVariables.ShowLargeSkillIcons = not plugin.controlVariables.ShowLargeSkillIcons;
-        TitanPanelButton_UpdateButton(ADDON_ID);
-    end
-    displayLargeSkillIcons.checked = plugin.controlVariables.ShowLargeSkillIcons;
-    TitanPanelRightClickMenu_AddButton(displayLargeSkillIcons);
-
-    -- ************************************** --
-    TitanPanelRightClickMenu_AddSpacer();
-    
-    -- ************************************** --
-    -- Default Titan Panel Options
-    TitanPanelRightClickMenu_AddControlVars(ADDON_ID);
-end
 
 -- ******************************** Initialization *******************************
 -- Check if Titan Panel's global ID exists before attempting to create frames
