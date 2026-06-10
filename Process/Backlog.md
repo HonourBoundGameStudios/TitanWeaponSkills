@@ -24,7 +24,7 @@ for this project.
 Make the existing behaviour solid before adding new behaviour.
 *(Items below are proposals — confirm before working them.)*
 
-- [ ] **[HYG-1] SavedVariables clobber** — `TitanWeaponSkillsSaved = {}` overwrites any restored copy and the `.toc` `## SavedVariables:` line is empty, so the global is dead weight; either remove it or wire it properly (`or {}` + `.toc` declaration). Titan's registry `savedVariables` is the real persistence today.
+- [x] **[HYG-1] SavedVariables clobber** — removed the dead `TitanWeaponSkillsSaved = {}` global: never declared in the `.toc`, never read, so Blizzard never persisted it; Titan's registry `savedVariables` is the real persistence. GREEN in-game on Classic Era (L1–L3, M5) 2026-06-10.
 - [ ] **[HYG-2] Global namespace cleanup** — `GetButtonText`/`GetTooltipText` are dangerously generic globals on a shared namespace; `FormatSkillRank`/`FormatSkillIcon`/`FormatSkillName`/`GetWeaponSkillsList`/`isWeaponSkill` don't need to be global at all (the registry takes function references). Localize/prefix, update the Global Name Registry in CLAUDE.md.
 - [ ] **[FLAV-1] Research: skill-line APIs per flavor** — do `GetNumSkillLines`/`GetSkillLineInfo` exist on retail 11.x and Cata Classic 4.x, and what do they return there (weapon skills were removed in 4.0.1)? Guard accordingly so non-Era flavors degrade to an empty button instead of erroring. (`Research/skill-line-api-reference.md`)
 - [ ] **[LOC-1] Research: locale-independent skill detection** — `isWeaponSkill()` matches English substrings and `iconTable` is keyed by English names; non-English clients show nothing. Find a locale-independent key (skill IDs? spell IDs?) before any matching rework. (`Research/weapon-skill-detection-research.md`)

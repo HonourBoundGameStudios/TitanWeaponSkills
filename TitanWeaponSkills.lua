@@ -66,9 +66,6 @@ local iconTable = {
 -- ******************************** Sound Effects *******************************
 local sfkIndex = 6518 -- WISP sound
 
--- ******************************** Variables *******************************
-TitanWeaponSkillsSaved = {}
-
 -- ******************************** Debugging *******************************
 -- Titan_Debug is a plain table; register topics by adding keys under ADDON_ID.
 -- Set a topic to true to enable output for that topic.
