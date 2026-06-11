@@ -189,8 +189,8 @@ local function OnLoad(self)
         menuText = "Weapon Skills", -- Text displayed in the Titan Panel menu
         menuTextFunction = PrepareWeaponSkillsMenu,
         tooltipTitle = "Weapon Skills", -- Title for the tooltip
-        buttonTextFunction = GetButtonText, -- Function to get the text displayed on the button
-        tooltipTextFunction = GetTooltipText, -- Function to generate the tooltip text
+        buttonTextFunction = TitanWeaponSkills_GetButtonText, -- Function to get the text displayed on the button
+        tooltipTextFunction = TitanWeaponSkills_GetTooltipText, -- Function to generate the tooltip text
         icon = "Interface\\Icons\\INV_Sword_27", -- Default icon for the button
         iconWidth = 16, -- Width of the icon
         notes = notes, -- Short description in the config
@@ -232,7 +232,7 @@ end
 -- ******************************** isWeaponSkill *******************************
 ---local Check if the skill is a weapon skill
 ---@param skillName string
-function isWeaponSkill(skillName)  
+local function isWeaponSkill(skillName)
     return skillName:find("Axe") or 
            skillName:find("Bow") or
            skillName:find("Crossbow") or
@@ -250,7 +250,7 @@ end
 
 -- ******************************** FormatSkillLevel *******************************
 ---local Format the skill level text for display
-function FormatSkillRank(skillRank, skillMaxRank, verticalAlignment)
+local function FormatSkillRank(skillRank, skillMaxRank, verticalAlignment)
     local currentSkillRankText = ""
 
     currentSkillRankText = "" .. skillRank
@@ -278,7 +278,7 @@ end
 
 -- ******************************** FormatSkillIcon *******************************
 ---local Format the skill icon for display
-function FormatSkillIcon(skillName, verticalAlignment)
+local function FormatSkillIcon(skillName, verticalAlignment)
     local skillIcon = ""
 
     -- Check if the plugin is configured to show skill icons
@@ -306,7 +306,7 @@ end
 
 -- ******************************** FormatSkillName *******************************
 ---local Format the skill name for display
-function FormatSkillName(skillName, verticalAlignment)
+local function FormatSkillName(skillName, verticalAlignment)
     local skillNameText = ""
 
     if TitanGetVar(ADDON_ID, "ShowSkillLabels") or verticalAlignment then
@@ -320,7 +320,7 @@ end
 
 -- ******************************** GetWeaponSkillsList *******************************
 ---local Get the list of weapon skills and their current levels
-function GetWeaponSkillsList(verticalAlignment)
+local function GetWeaponSkillsList(verticalAlignment)
     local allSkillsTable = {}
     local numSkills = GetNumSkillLines()
 
@@ -350,16 +350,18 @@ function GetWeaponSkillsList(verticalAlignment)
 end
 
 
--- ******************************** GetButtonText *******************************
----local Get the text to display on the button
-function GetButtonText()
+-- ******************************** TitanWeaponSkills_GetButtonText *******************************
+---Get the text to display on the button (global by contract: prefixed to avoid
+---collisions on the shared namespace — see Global Name Registry in CLAUDE.md)
+function TitanWeaponSkills_GetButtonText()
     return GetWeaponSkillsList()
 end
 
--- ******************************** GetTooltipText *******************************
+-- ******************************** TitanWeaponSkills_GetTooltipText *******************************
 -- Function to generate the tooltip text when hovering over the button
 -- This function will be called by Titan Panel to display detailed information.
-function GetTooltipText()
+-- Global by contract: prefixed to avoid collisions on the shared namespace.
+function TitanWeaponSkills_GetTooltipText()
     return GetWeaponSkillsList(true)
 end
 
