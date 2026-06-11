@@ -66,6 +66,18 @@ local iconTable = {
 -- ******************************** Sound Effects *******************************
 local sfkIndex = 6518 -- WISP sound
 
+-- ******************************** Locale-independent detection (LOC-1) *******************************
+-- weaponSkillNameCache is nil until CacheWeaponSkillNames() runs on PLAYER_ENTERING_WORLD.
+-- Falls back to the English seed until then (covers enUS/enGB out of the box).
+local weaponSkillNameCache = nil
+local WEAPON_SKILL_SEED = {
+    ["Axes"]=true, ["Bows"]=true, ["Crossbows"]=true, ["Daggers"]=true,
+    ["Fist Weapons"]=true, ["Guns"]=true, ["Maces"]=true, ["Polearms"]=true,
+    ["Staves"]=true, ["Swords"]=true, ["Thrown"]=true, ["Two-Handed Axes"]=true,
+    ["Two-Handed Maces"]=true, ["Two-Handed Swords"]=true, ["Unarmed"]=true,
+    ["Wands"]=true,
+}
+
 -- ******************************** Debugging *******************************
 -- Titan_Debug is a plain table; register topics by adding keys under ADDON_ID.
 -- Set a topic to true to enable output for that topic.
@@ -213,6 +225,9 @@ local function OnLoad(self)
     }
 end
 
+-- Forward declaration: defined below after isWeaponSkill; OnEvent captures the upvalue.
+local CacheWeaponSkillNames
+
 -- ******************************** OnEvent *******************************
 ---local Handle events registered to plugin
 ---@param self Button
@@ -221,7 +236,12 @@ end
 local function OnEvent(self, event, ...)
 	Titan_Debug.Out(ADDON_ID, "Events", "_OnEvent" .. " " .. tostring(event) .. "")
 
-    if event == "CHAT_MSG_SKILL" or event == "PLAYER_LEVEL_UP" then
+    if event == "PLAYER_ENTERING_WORLD" then
+        CacheWeaponSkillNames()
+    elseif event == "SKILL_LINES_CHANGED" then
+        CacheWeaponSkillNames()
+        TitanPanelButton_UpdateButton(ADDON_ID)
+    elseif event == "CHAT_MSG_SKILL" or event == "PLAYER_LEVEL_UP" then
         if TitanGetVar(ADDON_ID, "PlayAudioNotification") then
             PlaySound(sfkIndex)
         end
@@ -229,23 +249,55 @@ local function OnEvent(self, event, ...)
     end
 end
 
+-- ******************************** CacheWeaponSkillNames *******************************
+-- Scans all skill lines and stores the names of every skill under the weapon-skills
+-- category header into weaponSkillNameCache. Works in any client locale: the header
+-- is identified by scoring its children against WEAPON_SKILL_SEED (English signal)
+-- and the weapon-skill profile (isAbandonable=nil, maxRank>1, rank>0).
+CacheWeaponSkillNames = function()
+    weaponSkillNameCache = {}
+    local headers = {}
+    local current = nil
+    for i = 1, GetNumSkillLines() do
+        local name, isHdr, _, rank, _, _, maxRank, isAband = GetSkillLineInfo(i)
+        if isHdr then
+            current = { name = name, children = {} }
+            tinsert(headers, current)
+        elseif current then
+            tinsert(current.children, { name = name, rank = rank, maxRank = maxRank, isAband = isAband })
+        end
+    end
+    local best, bestScore = nil, 0
+    for _, hdr in ipairs(headers) do
+        local score = 0
+        for _, child in ipairs(hdr.children) do
+            if WEAPON_SKILL_SEED[child.name] then
+                score = score + 10  -- strong: English name match
+            elseif not child.isAband and child.maxRank and child.maxRank > 1
+                   and child.rank and child.rank > 0 then
+                score = score + 1   -- weak: weapon-skill profile
+            end
+        end
+        if score > bestScore then bestScore = score; best = hdr end
+    end
+    if best and bestScore > 0 then
+        for _, child in ipairs(best.children) do
+            weaponSkillNameCache[child.name] = true
+        end
+    else
+        for name in pairs(WEAPON_SKILL_SEED) do weaponSkillNameCache[name] = true end
+    end
+    Titan_Debug.Out(ADDON_ID, "Flow", "CacheWeaponSkillNames: cached " .. tostring(bestScore) .. " score")
+end
+
 -- ******************************** isWeaponSkill *******************************
----local Check if the skill is a weapon skill
+---local Check if the skill is a weapon skill (locale-independent via cache)
 ---@param skillName string
 local function isWeaponSkill(skillName)
-    return skillName:find("Axe") or 
-           skillName:find("Bow") or
-           skillName:find("Crossbow") or
-           skillName:find("Dagger") or
-           skillName:find("Fist Weapons") or
-           skillName:find("Guns") or
-           skillName:find("Mace") or 
-           skillName:find("Polearm") or 
-           skillName:find("Staves") or 
-           skillName:find("Sword") or 
-           skillName:find("Thrown") or
-           skillName:find("Unarmed") or 
-           skillName:find("Wand")
+    if weaponSkillNameCache then
+        return weaponSkillNameCache[skillName]
+    end
+    return WEAPON_SKILL_SEED[skillName]
 end
 
 -- ******************************** FormatSkillLevel *******************************
@@ -321,6 +373,8 @@ end
 -- ******************************** GetWeaponSkillsList *******************************
 ---local Get the list of weapon skills and their current levels
 local function GetWeaponSkillsList(verticalAlignment)
+    if not weaponSkillNameCache then CacheWeaponSkillNames() end
+
     local allSkillsTable = {}
     local numSkills = GetNumSkillLines()
 
@@ -393,6 +447,11 @@ local function CreateTitanButton()
     local window = CreateFrame("Button", TITAN_BUTTON_NAME, frame, "TitanPanelComboTemplate")
     window:SetFrameStrata("FULLSCREEN")
     OnLoad(window)
+
+    -- Permanently registered (not tied to OnShow/OnHide): build/refresh the
+    -- locale-aware weapon skill name cache on world enter and when skills change.
+    window:RegisterEvent("PLAYER_ENTERING_WORLD")
+    window:RegisterEvent("SKILL_LINES_CHANGED")
 
     window:SetScript("OnShow", 
         function(self) 
