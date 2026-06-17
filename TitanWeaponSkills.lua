@@ -25,6 +25,11 @@ local Colors = {
                 Reset = "|r" -- Reset color
             }
 
+-- Thin horizontal rule for the vertical tooltip: Blizzard's standard tooltip
+-- divider texture (the same one Atlas's dropdown lib uses on Classic Era). A line
+-- of glyphs renders as TOFU here, so a texture is the native fix. |Ttex:height:width|t
+local TOOLTIP_RULE = "|TInterface\\Common\\UI-TooltipDivider-Transparent:8:160|t"
+
 -- ****************************** Weapon Skill Types: ******************************
 -- Axes:                Used by classes like warriors, paladins, and rogues for melee combat.
 -- Bows:                Used by ranged classes like hunters. 
@@ -117,6 +122,30 @@ local function Events(action, reason)
 	Titan_Debug.Out(ADDON_ID, "Events", msg)
 end
 
+-- ******************************** About dialog *******************************
+-- StaticPopup with a focused, pre-selected editbox so the player can Ctrl-C the
+-- studio link (WoW can't open an external browser). preferredIndex = 3 avoids taint.
+local HBGS_URL = "https://store.steampowered.com/curator/44062210-Honour-Bound-Game-Studios/"
+StaticPopupDialogs["TITANWEAPONSKILLS_ABOUT"] = {
+    text = "Honour Bound Game Studios\nTitanWeaponSkills v" .. VERSION
+        .. "\n\nSelect and copy the link below (Ctrl-C):",
+    button1 = OKAY,
+    hasEditBox = true,
+    editBoxWidth = 350,
+    OnShow = function(self)
+        local editBox = self.editBox or (self.GetEditBox and self:GetEditBox())
+        editBox:SetText(HBGS_URL)
+        editBox:HighlightText()
+        editBox:SetFocus()
+    end,
+    EditBoxOnEnterPressed = function(self) self:GetParent():Hide() end,
+    EditBoxOnEscapePressed = function(self) self:GetParent():Hide() end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
 -- ******************************** PrepareWeaponSkillsMenu *******************************
 ---local Build the right-click dropdown menu (UIDropDownMenu scheme)
 local function PrepareWeaponSkillsMenu()
@@ -173,6 +202,30 @@ local function PrepareWeaponSkillsMenu()
     info.keepShownOnClick = 1
     TitanPanelRightClickMenu_AddButton(info, level)
 
+    -- ************************************** --
+    -- Hide Maxed Skills Toggle
+    info = {}
+    info.text = "Hide Maxed Skills"
+    info.func = function()
+        TitanPanelRightClickMenu_ToggleVar({ADDON_ID, "HideMaxedSkills"})
+        TitanPanelButton_UpdateButton(ADDON_ID)
+    end
+    info.checked = TitanUtils_Ternary(TitanGetVar(ADDON_ID, "HideMaxedSkills"), 1, nil)
+    info.keepShownOnClick = 1
+    TitanPanelRightClickMenu_AddButton(info, level)
+
+    TitanPanelRightClickMenu_AddSpacer()
+
+    -- ************************************** --
+    -- About Honour Bound Game Studios
+    info = {}
+    info.text = "About Honour Bound Game Studios"
+    info.func = function()
+        StaticPopup_Show("TITANWEAPONSKILLS_ABOUT")
+    end
+    info.notCheckable = 1
+    TitanPanelRightClickMenu_AddButton(info, level)
+
     TitanPanelRightClickMenu_AddSpacer()
 
     -- ************************************** --
@@ -213,6 +266,7 @@ local function OnLoad(self)
             ShowSkillIcons = true,
             ShowLargeSkillIcons = true,
             PlayAudioNotification = true,
+            HideMaxedSkills = false,
         },
         savedVariables = {
             ShowIcon = true,
@@ -221,6 +275,7 @@ local function OnLoad(self)
             ShowSkillIcons = true,
             ShowLargeSkillIcons = true,
             PlayAudioNotification = true,
+            HideMaxedSkills = false,
         }
     }
 end
@@ -382,7 +437,10 @@ local function GetWeaponSkillsList(verticalAlignment)
         local skillName, _, _, skillRank, _, _, skillMaxRank, _, _, _, _, _, _ = GetSkillLineInfo(skillIndex)
 
         -- Check if the skill is a weapon skill and has a valid rank
-        if isWeaponSkill(skillName) and skillRank and skillRank > 0 then
+        local isMaxed = skillRank and skillMaxRank and (skillRank == skillMaxRank)
+        local hideMaxed = not verticalAlignment and TitanGetVar(ADDON_ID, "HideMaxedSkills")
+        if isWeaponSkill(skillName) and skillRank and skillRank > 0
+           and not (isMaxed and hideMaxed) then
         
             -- [Skill Icon] + [Skill Name] + ": " + [Skill Rank / Max Rank]
             local skillIcon = FormatSkillIcon(skillName, verticalAlignment)
@@ -399,8 +457,17 @@ local function GetWeaponSkillsList(verticalAlignment)
     end
 
     local separator = verticalAlignment and "\n" or "   "
-    
-    return table.concat(allSkillsTable, separator)
+    local list = table.concat(allSkillsTable, separator)
+
+    -- Vertical tooltip only (never the bar): a rule under the Titan title, then
+    -- the skill list, a rule, and the Honour Bound Game Studios branding footer.
+    if verticalAlignment then
+        local logo = "|TInterface\\AddOns\\TitanWeaponSkills\\Media\\HBGS-Logo:14:14|t "
+        local footer = logo .. Colors.LightGray .. "Honour Bound Game Studios" .. Colors.Reset
+        list = TOOLTIP_RULE .. "\n" .. list .. "\n" .. TOOLTIP_RULE .. "\n" .. footer
+    end
+
+    return list
 end
 
 
