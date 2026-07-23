@@ -147,7 +147,9 @@ StaticPopupDialogs["TITANWEAPONSKILLS_ABOUT"] = {
 }
 
 -- ******************************** PrepareWeaponSkillsMenu *******************************
----local Build the right-click dropdown menu (UIDropDownMenu scheme)
+---local Build the right-click dropdown menu -- OLD UIDropDownMenu scheme.
+--- Kept only as a fallback for Titan builds predating the Jan 2026 menu rewrite;
+--- on current Titan the menuContextFunction below (GeneratorFunction) wins.
 local function PrepareWeaponSkillsMenu()
     TitanPanelRightClickMenu_AddTitle(TitanPlugins[ADDON_ID].menuText)
 
@@ -236,6 +238,27 @@ local function PrepareWeaponSkillsMenu()
     TitanPanelRightClickMenu_AddHide(ADDON_ID)
 end
 
+-- ******************************** GeneratorFunction *******************************
+-- Right-click menu -- NEW scheme (Jan 2026). Blizzard rewrote the Menu API and
+-- is removing the old UIDropDownMenu code, so Titan wraps Blizzard_Menu behind
+-- Titan_Menu and calls this generator on right-click. Titan itself adds the menu
+-- title (top) plus the ShowIcon / DisplayOnRightSide toggles and Hide (bottom)
+-- from the registry's controlVariables, so we only supply our own entries.
+-- AddSelector toggles the saved variable and refreshes the button text for us.
+---@param owner table Plugin frame
+---@param root table Menu context root
+local function GeneratorFunction(owner, root)
+    Titan_Menu.AddSelector(root, ADDON_ID, "Skill Labels", "ShowSkillLabels")
+    Titan_Menu.AddSelector(root, ADDON_ID, "Skill Icons", "ShowSkillIcons")
+    Titan_Menu.AddSelector(root, ADDON_ID, "Large Skill Icons", "ShowLargeSkillIcons")
+    Titan_Menu.AddSpacer(root)
+    Titan_Menu.AddSelector(root, ADDON_ID, "Audio Notification", "PlayAudioNotification")
+    Titan_Menu.AddSelector(root, ADDON_ID, "Hide Maxed Skills", "HideMaxedSkills")
+    Titan_Menu.AddSpacer(root)
+    Titan_Menu.AddCommand(root, ADDON_ID, "About Honour Bound Game Studios",
+        function() StaticPopup_Show("TITANWEAPONSKILLS_ABOUT") end)
+end
+
 -- ******************************** OnLoad *******************************
 ---local Initialize the addon when loaded
 local function OnLoad(self)
@@ -252,7 +275,8 @@ local function OnLoad(self)
         category = "Combat",
         version = VERSION,
         menuText = "Weapon Skills", -- Text displayed in the Titan Panel menu
-        menuTextFunction = PrepareWeaponSkillsMenu,
+        menuContextFunction = GeneratorFunction,   -- NEW scheme (1st priority, Jan 2026)
+        menuTextFunction = PrepareWeaponSkillsMenu, -- OLD scheme fallback (pre-2026 Titan)
         tooltipTitle = "Weapon Skills", -- Title for the tooltip
         buttonTextFunction = TitanWeaponSkills_GetButtonText, -- Function to get the text displayed on the button
         tooltipTextFunction = TitanWeaponSkills_GetTooltipText, -- Function to generate the tooltip text
