@@ -14,7 +14,7 @@
 local _G = getfenv(0);
 local ADDON_ID = "WeaponSkills" -- Short ID for the plugin
 local TITAN_BUTTON_NAME = "TitanPanel" .. ADDON_ID .. "Button" -- Full name of the Titan Panel button frame
-local VERSION = "1.1.0" -- Version of the addon
+local VERSION = "1.2.0" -- Version of the addon
 local Colors = {
                 White = "|cffffffff",
                 Yellow = "|cffffff00",

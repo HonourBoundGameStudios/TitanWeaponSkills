@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0] - 2026-07-22
+
+### Added
+- Locale-independent weapon skill detection — skill lines are now identified by stable SkillLine IDs, so the addon works on non-English clients
+- Honour Bound Game Studios branding: an About popup and a tooltip footer
+
+### Fixed
+- Right-click menu migrated to the January 2026 `Titan_Menu` scheme (the old menu API had stopped opening)
+
+### Changed
+- Bumped Classic Era interface version to 11509
+
 ## [1.1.0] - 2026-05-24
 
 ### Added
