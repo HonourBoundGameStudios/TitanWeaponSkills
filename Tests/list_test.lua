@@ -71,7 +71,10 @@ H.eq(#lines, 5, "rule, two skills, rule, footer")
 H.eq(lines[1], Engine.TOOLTIP_RULE, "opens with a divider")
 H.eq(lines[4], Engine.TOOLTIP_RULE, "closes the list with a divider")
 H.eq(lines[5], "HBGS", "caller's footer goes last")
-H.ok(lines[2]:find("\t", 1, true) ~= nil, "vertical entries tab between label and rank")
+-- No tab: a stock GameTooltip font renders \t as TOFU on every line. The label
+-- and rank sit next to each other, separated by the label's own ": ".
+H.ok(lines[2]:find("\t", 1, true) == nil, "vertical entries carry no tab (would tofu in the tooltip)")
+H.ok(lines[2]:find("Swords: ", 1, true) ~= nil, "label's ': ' separates it from the rank")
 
 -- Vertical is the detail view: it overrides the bar's compaction toggles.
 H.ok(tip:find("Swords", 1, true) ~= nil, "vertical forces labels on")

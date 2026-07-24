@@ -185,8 +185,10 @@ function Engine.BuildList(skills, opts)
         if s.isWeapon and s.rank and s.rank > 0 and not hidden then
             local icon = showIcons and Engine.IconMarkup(s.name, opts.largeIcons) or ""
             local label = showLabels and Engine.FormatName(s.name) or ""
-            local gap = vertical and "\t" or ""
-            entries[#entries + 1] = icon .. label .. gap .. Engine.FormatRank(s.rank, s.maxRank)
+            -- No tab between label and rank: the tooltip font has no tab glyph
+            -- (a stock GameTooltip renders it as TOFU), and the label already
+            -- ends in ": " so the rank is separated regardless.
+            entries[#entries + 1] = icon .. label .. Engine.FormatRank(s.rank, s.maxRank)
         end
     end
 
