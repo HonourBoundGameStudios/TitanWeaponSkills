@@ -14,6 +14,7 @@
 
 ### Fixed
 - A skill line with no cap can no longer divide by zero while colouring its rank.
+- Tooltip lines no longer show a stray box (missing-glyph) character between the skill name and its rank.
 
 ## [1.2.0] - 2026-07-22
 
