@@ -1,5 +1,20 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- **Titan Panel is no longer required.** The addon publishes a LibDataBroker feed, so any LDB display can host it — Titan Panel (through its own LDB bridge), Bazooka, ElvUI DataTexts — and it ships a minimap button for players running no bar at all.
+- **Renamed to Weapon Journey** (addon folder `WeaponJourney`): the old name implied a Titan prerequisite that no longer exists.
+- Settings moved out of Titan's store into the addon's own saved variables. Existing toggles are imported automatically on first login; nothing to reconfigure.
+- The right-click menu is now the addon's own (Blizzard's Menu API) and gained a "Show minimap button" toggle. The Titan-specific entries (Show Icon, Display on Right Side, Hide) are gone — those belong to the host display now.
+
+### Added
+- An offline test suite for the display logic (`Tests/`, run with a standalone Lua interpreter): rank colour thresholds, icon name-folding, list assembly, locale-independent skill detection, and the settings store.
+- Empty-state text on the bar, so a character with no weapon skills shows a label instead of a blank gap.
+
+### Fixed
+- A skill line with no cap can no longer divide by zero while colouring its rank.
+
 ## [1.2.0] - 2026-07-22
 
 ### Added
