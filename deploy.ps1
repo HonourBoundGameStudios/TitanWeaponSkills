@@ -1,7 +1,15 @@
 # $PSScriptRoot is empty when run via -Command rather than -File (e.g. some IDE runners).
 # Fall back to the script's resolved path so Rider Run Configurations work either way.
 $source = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent (Resolve-Path $MyInvocation.MyCommand.Path) }
-$dest = "D:\Games\World of Warcraft\_classic_era_\Interface\AddOns\TitanWeaponSkills"
+$dest = "D:\Games\World of Warcraft\_classic_era_\Interface\AddOns\WeaponJourney"
+$legacy = "D:\Games\World of Warcraft\_classic_era_\Interface\AddOns\TitanWeaponSkills"
+
+# The addon folder was renamed (TitanWeaponSkills -> WeaponJourney). Leaving the
+# old folder in place would load a second, stale copy of the addon beside it.
+if (Test-Path $legacy) {
+    Remove-Item -Recurse -Force $legacy
+    Write-Host "Removed the stale addon folder $legacy"
+}
 
 New-Item -ItemType Directory -Force -Path $dest | Out-Null
 

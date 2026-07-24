@@ -1,0 +1,11 @@
+## Interface: 11509
+## Title: |cffeda55fWeapon Journey|r
+## Version: 1.2.0
+## IconTexture: Interface\Icons\INV_Sword_27
+## Notes: Tracks your weapon skills. Formerly TitanWeaponSkills.
+## Author: Honour Bound Game Studios Inc.
+## X-Curse-Project-ID: 1309370
+## SavedVariables:
+## OptionalDeps:
+## Dependencies: Titan
+WeaponJourney.lua

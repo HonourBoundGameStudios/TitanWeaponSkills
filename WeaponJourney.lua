@@ -1,9 +1,9 @@
 ---@diagnostic disable: duplicate-set-field
 
 -- **************************************************************************
--- * TitanWeaponSkills.lua
+-- * WeaponJourney.lua
 -- *
--- * Titan Panel - Weapon Skills Addon
+-- * Weapon Journey (formerly TitanWeaponSkills)
 -- * @Description: Displays the player's current weapon skills on Titan Panel
 -- * @Version: 1.1.0
 -- * @Date: Jul 19, 2025
@@ -126,8 +126,8 @@ end
 -- StaticPopup with a focused, pre-selected editbox so the player can Ctrl-C the
 -- studio link (WoW can't open an external browser). preferredIndex = 3 avoids taint.
 local HBGS_URL = "https://store.steampowered.com/curator/44062210-Honour-Bound-Game-Studios/"
-StaticPopupDialogs["TITANWEAPONSKILLS_ABOUT"] = {
-    text = "Honour Bound Game Studios\nTitanWeaponSkills v" .. VERSION
+StaticPopupDialogs["WEAPONJOURNEY_ABOUT"] = {
+    text = "Honour Bound Game Studios\nWeapon Journey v" .. VERSION
         .. "\n\nSelect and copy the link below (Ctrl-C):",
     button1 = OKAY,
     hasEditBox = true,
@@ -223,7 +223,7 @@ local function PrepareWeaponSkillsMenu()
     info = {}
     info.text = "About Honour Bound Game Studios"
     info.func = function()
-        StaticPopup_Show("TITANWEAPONSKILLS_ABOUT")
+        StaticPopup_Show("WEAPONJOURNEY_ABOUT")
     end
     info.notCheckable = 1
     TitanPanelRightClickMenu_AddButton(info, level)
@@ -256,7 +256,7 @@ local function GeneratorFunction(owner, root)
     Titan_Menu.AddSelector(root, ADDON_ID, "Hide Maxed Skills", "HideMaxedSkills")
     Titan_Menu.AddSpacer(root)
     Titan_Menu.AddCommand(root, ADDON_ID, "About Honour Bound Game Studios",
-        function() StaticPopup_Show("TITANWEAPONSKILLS_ABOUT") end)
+        function() StaticPopup_Show("WEAPONJOURNEY_ABOUT") end)
 end
 
 -- ******************************** OnLoad *******************************
@@ -278,8 +278,8 @@ local function OnLoad(self)
         menuContextFunction = GeneratorFunction,   -- NEW scheme (1st priority, Jan 2026)
         menuTextFunction = PrepareWeaponSkillsMenu, -- OLD scheme fallback (pre-2026 Titan)
         tooltipTitle = "Weapon Skills", -- Title for the tooltip
-        buttonTextFunction = TitanWeaponSkills_GetButtonText, -- Function to get the text displayed on the button
-        tooltipTextFunction = TitanWeaponSkills_GetTooltipText, -- Function to generate the tooltip text
+        buttonTextFunction = WeaponJourney_GetButtonText, -- Function to get the text displayed on the button
+        tooltipTextFunction = WeaponJourney_GetTooltipText, -- Function to generate the tooltip text
         icon = "Interface\\Icons\\INV_Sword_27", -- Default icon for the button
         iconWidth = 16, -- Width of the icon
         notes = notes, -- Short description in the config
@@ -486,7 +486,7 @@ local function GetWeaponSkillsList(verticalAlignment)
     -- Vertical tooltip only (never the bar): a rule under the Titan title, then
     -- the skill list, a rule, and the Honour Bound Game Studios branding footer.
     if verticalAlignment then
-        local logo = "|TInterface\\AddOns\\TitanWeaponSkills\\Media\\HBGS-Logo:14:14|t "
+        local logo = "|TInterface\\AddOns\\WeaponJourney\\Media\\HBGS-Logo:14:14|t "
         local footer = logo .. Colors.LightGray .. "Honour Bound Game Studios" .. Colors.Reset
         list = TOOLTIP_RULE .. "\n" .. list .. "\n" .. TOOLTIP_RULE .. "\n" .. footer
     end
@@ -495,18 +495,18 @@ local function GetWeaponSkillsList(verticalAlignment)
 end
 
 
--- ******************************** TitanWeaponSkills_GetButtonText *******************************
+-- ******************************** WeaponJourney_GetButtonText *******************************
 ---Get the text to display on the button (global by contract: prefixed to avoid
 ---collisions on the shared namespace — see Global Name Registry in CLAUDE.md)
-function TitanWeaponSkills_GetButtonText()
+function WeaponJourney_GetButtonText()
     return GetWeaponSkillsList()
 end
 
--- ******************************** TitanWeaponSkills_GetTooltipText *******************************
+-- ******************************** WeaponJourney_GetTooltipText *******************************
 -- Function to generate the tooltip text when hovering over the button
 -- This function will be called by Titan Panel to display detailed information.
 -- Global by contract: prefixed to avoid collisions on the shared namespace.
-function TitanWeaponSkills_GetTooltipText()
+function WeaponJourney_GetTooltipText()
     return GetWeaponSkillsList(true)
 end
 
@@ -527,7 +527,7 @@ local function OnHide(self)
     Events("unregister", "_OnHide")    
 end
     
--- ******************************** CreateTitanWeaponSkillsButton *******************************
+-- ******************************** CreateTitanButton *******************************
 ---local Create the Titan Panel button for the Weapon Skills addon
 local function CreateTitanButton()
     if _G[TITAN_BUTTON_NAME] then
@@ -571,12 +571,12 @@ end
 -- Check if Titan Panel's global ID exists before attempting to create frames
 -- This ensures Titan Panel is loaded before we try to interact with it.
 if TITAN_ID then
-    Titan_Debug.Out(ADDON_ID, "Flow", "TitanWeaponSkills: TITAN_ID found. Attempting to create button frame.")
+    Titan_Debug.Out(ADDON_ID, "Flow", "WeaponJourney: TITAN_ID found. Attempting to create button frame.")
     CreateTitanButton()
 else
     -- If TITAN_ID is not immediately available, we might still be too early.
     -- This scenario is less likely with ##Dependencies, but good to be aware.
-    Titan_Debug.Out(ADDON_ID, "Flow", "TitanWeaponSkills: TITAN_ID not found at initial load. This addon might load before Titan Panel.")
+    Titan_Debug.Out(ADDON_ID, "Flow", "WeaponJourney: TITAN_ID not found at initial load. This addon might load before Titan Panel.")
     -- For robustness, you could add an ADDON_LOADED listener for "Titan" here
     -- if you consistently find TITAN_ID missing at this point.
     -- However, ##Dependencies: Titan in .toc should generally handle this.
