@@ -168,7 +168,7 @@ end
 -- line, labels and icons forced on, maxed skills always kept, wrapped in rules).
 --
 ---@param skills table array of { name, rank, maxRank, isWeapon }
----@param opts table|nil { labels, icons, largeIcons, hideMaxed, vertical, footer }
+---@param opts table|nil { labels, icons, largeIcons, hideMaxed, vertical, footer, empty }
 ---@return string
 function Engine.BuildList(skills, opts)
     opts = opts or {}
@@ -191,6 +191,13 @@ function Engine.BuildList(skills, opts)
     end
 
     local list = table.concat(entries, vertical and "\n" or "   ")
+    -- Nothing to show (every skill maxed and hidden, skills not loaded yet): a
+    -- LibDataBroker display renders an empty feed as a blank gap that reads as
+    -- broken, so the caller supplies placeholder text to stand in for the list.
+    if #entries == 0 and opts.empty then
+        list = opts.empty
+    end
+
     if not vertical then
         return list
     end

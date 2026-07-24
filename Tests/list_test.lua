@@ -51,6 +51,16 @@ H.ok(hidden:find("   ", 1, true) == nil, "one entry left -> no dangling separato
 H.eq(Engine.BuildList({}, {}), "", "no skills -> empty string, not an error")
 H.eq(Engine.BuildList(skills()), bare, "nil opts behaves like all-off")
 
+-- Empty-state placeholder: a blank LibDataBroker feed reads as a broken addon.
+H.eq(Engine.BuildList({}, { empty = "no skills" }), "no skills", "no skills -> placeholder")
+H.eq(Engine.BuildList(skills(), { empty = "no skills" }), bare, "placeholder unused when there are entries")
+local allHidden = { { name = "Swords", rank = 300, maxRank = 300, isWeapon = true } }
+H.eq(Engine.BuildList(allHidden, { hideMaxed = true, empty = "all maxed" }), "all maxed",
+    "everything filtered out -> placeholder")
+local emptyTip = Engine.BuildList({}, { vertical = true, empty = "no skills", footer = "HBGS" })
+H.ok(emptyTip:find("no skills", 1, true) ~= nil, "tooltip shows the placeholder too")
+H.ok(emptyTip:find("HBGS", 1, true) ~= nil, "and keeps its footer")
+
 -- ── Tooltip body ─────────────────────────────────────────────────────────────
 
 local tip = Engine.BuildList(skills(), { vertical = true, footer = "HBGS" })

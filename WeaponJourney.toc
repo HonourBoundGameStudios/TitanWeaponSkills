@@ -2,11 +2,16 @@
 ## Title: |cffeda55fWeapon Journey|r
 ## Version: 1.2.0
 ## IconTexture: Interface\Icons\INV_Sword_27
-## Notes: Tracks your weapon skills. Formerly TitanWeaponSkills.
+## Notes: Tracks your weapon skills on any LibDataBroker display (Titan Panel, Bazooka, ElvUI, ...) or its own minimap button. Formerly TitanWeaponSkills.
 ## Author: Honour Bound Game Studios Inc.
 ## X-Curse-Project-ID: 1309370
-## SavedVariables:
-## OptionalDeps:
-## Dependencies: Titan
+## SavedVariables: WeaponJourneyDB
+
+Libs\LibStub.lua
+Libs\CallbackHandler-1.0.lua
+Libs\LibDataBroker-1.1.lua
+Libs\LibDBIcon-1.0.lua
+
 WeaponJourneyEngine.lua
+WeaponJourneyDB.lua
 WeaponJourney.lua
