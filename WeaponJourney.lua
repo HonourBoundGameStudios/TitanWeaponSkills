@@ -15,20 +15,13 @@ local _G = getfenv(0);
 local ADDON_ID = "WeaponSkills" -- Short ID for the plugin
 local TITAN_BUTTON_NAME = "TitanPanel" .. ADDON_ID .. "Button" -- Full name of the Titan Panel button frame
 local VERSION = "1.2.0" -- Version of the addon
-local Colors = {
-                White = "|cffffffff",
-                Yellow = "|cffffff00",
-                Orange = "|cffffa500",
-                Red = "|cffff0000",
-                Green = "|cff00ff00",
-                LightGray = "|cffbbbbbb",
-                Reset = "|r" -- Reset color
-            }
 
--- Thin horizontal rule for the vertical tooltip: Blizzard's standard tooltip
--- divider texture (the same one Atlas's dropdown lib uses on Classic Era). A line
--- of glyphs renders as TOFU here, so a texture is the native fix. |Ttex:height:width|t
-local TOOLTIP_RULE = "|TInterface\\Common\\UI-TooltipDivider-Transparent:8:160|t"
+-- The pure display engine (WeaponJourneyEngine.lua, loaded first by the .toc)
+-- owns every formatting decision -- colours, icons, the rank string, the list
+-- assembly -- so those rules are covered by the offline tests in Tests/ rather
+-- than by eye alone. This file stays thin: scan, read settings, hand off.
+local Engine = WeaponJourney_Engine
+local Colors = Engine.COLORS
 
 -- ****************************** Weapon Skill Types: ******************************
 -- Axes:                Used by classes like warriors, paladins, and rogues for melee combat.
@@ -48,40 +41,13 @@ local TOOLTIP_RULE = "|TInterface\\Common\\UI-TooltipDivider-Transparent:8:160|t
 -- Unarmed:             Represents the skill of fighting without weapons, used by monks and in certain situations by other classes.
 -- Wands:               Ranged weapons for casters, often used for leveling. 
 
--- ************************* Icon Paths *******************************
-local iconTable = {
-                    Axes = "Interface\\Icons\\inv_axe_06",
-                    Bows = "Interface\\Icons\\inv_weapon_bow_04",
-                    Crossbows = "Interface\\Icons\\inv_weapon_crossbow_01",
-                    Daggers = "Interface\\Icons\\inv_sword_31",
-                    Fist_Weapons = "Interface\\Icons\\inv_gauntlets_28",
-                    Guns = "Interface\\Icons\\inv_weapon_rifle_05",
-                    Maces = "Interface\\Icons\\inv_mace_36",
-                    Polearms = "Interface\\Icons\\inv_axe_30",
-                    Staves = "Interface\\Icons\\inv_staff_14",
-                    Swords = "Interface\\Icons\\inv_sword_28",
-                    Thrown = "Interface\\Icons\\inv_throwingknife_05",
-                    Two_Handed_Axes = "Interface\\Icons\\inv_axe_10",
-                    Two_Handed_Maces = "Interface\\Icons\\inv_mace_47",
-                    Two_Handed_Swords = "Interface\\Icons\\inv_sword_21",
-                    Unarmed = "Interface\\Icons\\inv_gauntlets_30",
-                    Wands = "Interface\\Icons\\inv_wand_06",
-                }
-                
 -- ******************************** Sound Effects *******************************
 local sfkIndex = 6518 -- WISP sound
 
 -- ******************************** Locale-independent detection (LOC-1) *******************************
 -- weaponSkillNameCache is nil until CacheWeaponSkillNames() runs on PLAYER_ENTERING_WORLD.
--- Falls back to the English seed until then (covers enUS/enGB out of the box).
+-- Falls back to the engine's English seed until then (covers enUS/enGB out of the box).
 local weaponSkillNameCache = nil
-local WEAPON_SKILL_SEED = {
-    ["Axes"]=true, ["Bows"]=true, ["Crossbows"]=true, ["Daggers"]=true,
-    ["Fist Weapons"]=true, ["Guns"]=true, ["Maces"]=true, ["Polearms"]=true,
-    ["Staves"]=true, ["Swords"]=true, ["Thrown"]=true, ["Two-Handed Axes"]=true,
-    ["Two-Handed Maces"]=true, ["Two-Handed Swords"]=true, ["Unarmed"]=true,
-    ["Wands"]=true,
-}
 
 -- ******************************** Debugging *******************************
 -- Titan_Debug is a plain table; register topics by adding keys under ADDON_ID.
@@ -328,45 +294,36 @@ local function OnEvent(self, event, ...)
     end
 end
 
--- ******************************** CacheWeaponSkillNames *******************************
--- Scans all skill lines and stores the names of every skill under the weapon-skills
--- category header into weaponSkillNameCache. Works in any client locale: the header
--- is identified by scoring its children against WEAPON_SKILL_SEED (English signal)
--- and the weapon-skill profile (isAbandonable=nil, maxRank>1, rank>0).
-CacheWeaponSkillNames = function()
-    weaponSkillNameCache = {}
-    local headers = {}
+-- ******************************** ScanSkillLines *******************************
+---local Read every skill line out of the client into a plain array the engine
+---can work on: { name, rank, maxRank, isAbandonable } plus the header grouping.
+---This is the only place that touches GetNumSkillLines/GetSkillLineInfo.
+---@return table headers, table skills
+local function ScanSkillLines()
+    local headers, skills = {}, {}
     local current = nil
     for i = 1, GetNumSkillLines() do
         local name, isHdr, _, rank, _, _, maxRank, isAband = GetSkillLineInfo(i)
         if isHdr then
             current = { name = name, children = {} }
             tinsert(headers, current)
-        elseif current then
-            tinsert(current.children, { name = name, rank = rank, maxRank = maxRank, isAband = isAband })
+        else
+            local skill = { name = name, rank = rank, maxRank = maxRank, isAbandonable = isAband }
+            tinsert(skills, skill)
+            if current then tinsert(current.children, skill) end
         end
     end
-    local best, bestScore = nil, 0
-    for _, hdr in ipairs(headers) do
-        local score = 0
-        for _, child in ipairs(hdr.children) do
-            if WEAPON_SKILL_SEED[child.name] then
-                score = score + 10  -- strong: English name match
-            elseif not child.isAband and child.maxRank and child.maxRank > 1
-                   and child.rank and child.rank > 0 then
-                score = score + 1   -- weak: weapon-skill profile
-            end
-        end
-        if score > bestScore then bestScore = score; best = hdr end
-    end
-    if best and bestScore > 0 then
-        for _, child in ipairs(best.children) do
-            weaponSkillNameCache[child.name] = true
-        end
-    else
-        for name in pairs(WEAPON_SKILL_SEED) do weaponSkillNameCache[name] = true end
-    end
-    Titan_Debug.Out(ADDON_ID, "Flow", "CacheWeaponSkillNames: cached " .. tostring(bestScore) .. " score")
+    return headers, skills
+end
+
+-- ******************************** CacheWeaponSkillNames *******************************
+-- Stores the names of every skill under the weapon-skills category header into
+-- weaponSkillNameCache. Works in any client locale -- the header-scoring logic
+-- lives in the engine (Engine.WeaponSkillNames) and is covered by Tests/.
+CacheWeaponSkillNames = function()
+    local headers = ScanSkillLines()
+    weaponSkillNameCache = Engine.WeaponSkillNames(headers)
+    Titan_Debug.Out(ADDON_ID, "Flow", "CacheWeaponSkillNames: cached the weapon-skill names")
 end
 
 -- ******************************** isWeaponSkill *******************************
@@ -376,120 +333,37 @@ local function isWeaponSkill(skillName)
     if weaponSkillNameCache then
         return weaponSkillNameCache[skillName]
     end
-    return WEAPON_SKILL_SEED[skillName]
-end
-
--- ******************************** FormatSkillLevel *******************************
----local Format the skill level text for display
-local function FormatSkillRank(skillRank, skillMaxRank, verticalAlignment)
-    local currentSkillRankText = ""
-
-    currentSkillRankText = "" .. skillRank
-
-    -- Color the currentSkillText based on its value
-    if skillRank == skillMaxRank then
-        currentSkillRankText = Colors.Green .. currentSkillRankText .. Colors.Reset -- Green for maxed skill
-    elseif skillRank / skillMaxRank >= 0.90 then
-        currentSkillRankText = Colors.Yellow .. currentSkillRankText .. Colors.Reset -- Yellow for medium skill
-    elseif skillRank / skillMaxRank >= 0.80 then
-        currentSkillRankText = Colors.Orange .. currentSkillRankText .. Colors.Reset -- Orange for high skill
-    else
-        currentSkillRankText = Colors.Red .. currentSkillRankText .. Colors.Reset -- Red for low skill
-    end
-
-    -- Light grey for maxSkill unless it is maxed
-    if skillRank == skillMaxRank then
-        currentSkillRankText = currentSkillRankText .. Colors.Green .. "/" .. skillMaxRank .. Colors.Reset
-    else
-        currentSkillRankText = currentSkillRankText .. Colors.LightGray .. "/" .. skillMaxRank .. Colors.Reset
-    end
-
-    return currentSkillRankText
-end
-
--- ******************************** FormatSkillIcon *******************************
----local Format the skill icon for display
-local function FormatSkillIcon(skillName, verticalAlignment)
-    local skillIcon = ""
-
-    -- Check if the plugin is configured to show skill icons
-    if TitanGetVar(ADDON_ID, "ShowSkillIcons") or verticalAlignment then
-
-        -- Check if the skill is a weapon skill and get the icon path
-        local skillNameWithoutDashOrSpaces = skillName:gsub("-", "_")
-        skillNameWithoutDashOrSpaces = skillNameWithoutDashOrSpaces:gsub(" ", "_")
-        local iconPath = iconTable[skillNameWithoutDashOrSpaces] or "Interface\\Icons\\INV_Sword_27" -- Default to sword icon if not found
-
-        -- If the skill is a weapon skill, prepend the icon to the skill name
-        if isWeaponSkill(skillName) then
-            if TitanGetVar(ADDON_ID, "ShowLargeSkillIcons") then
-                -- Use standard icon size
-                skillIcon = "|T" .. iconPath .. ":24:24:0:0|t "
-            else
-                -- Use small icon size if configured
-                skillIcon = "|T" .. iconPath .. ":16:16:0:0|t "
-            end
-        end
-    end
-
-    return skillIcon
-end
-
--- ******************************** FormatSkillName *******************************
----local Format the skill name for display
-local function FormatSkillName(skillName, verticalAlignment)
-    local skillNameText = ""
-
-    if TitanGetVar(ADDON_ID, "ShowSkillLabels") or verticalAlignment then
-        skillNameText = Colors.White .. skillName .. ": " .. Colors.Reset
-    else
-        skillNameText = ""
-    end
-
-    return skillNameText
+    return Engine.WEAPON_SKILL_SEED[skillName]
 end
 
 -- ******************************** GetWeaponSkillsList *******************************
----local Get the list of weapon skills and their current levels
+---local Get the list of weapon skills and their current levels.
+---Thin now: scan, tag which lines are weapon skills, read the toggles, and let
+---the engine assemble the string (both the bar text and the tooltip body).
 local function GetWeaponSkillsList(verticalAlignment)
     if not weaponSkillNameCache then CacheWeaponSkillNames() end
 
-    local allSkillsTable = {}
-    local numSkills = GetNumSkillLines()
-
-    for skillIndex = 1, numSkills do
-        local skillName, _, _, skillRank, _, _, skillMaxRank, _, _, _, _, _, _ = GetSkillLineInfo(skillIndex)
-
-        -- Check if the skill is a weapon skill and has a valid rank
-        local isMaxed = skillRank and skillMaxRank and (skillRank == skillMaxRank)
-        local hideMaxed = not verticalAlignment and TitanGetVar(ADDON_ID, "HideMaxedSkills")
-        if isWeaponSkill(skillName) and skillRank and skillRank > 0
-           and not (isMaxed and hideMaxed) then
-        
-            -- [Skill Icon] + [Skill Name] + ": " + [Skill Rank / Max Rank]
-            local skillIcon = FormatSkillIcon(skillName, verticalAlignment)
-            local skillNameText = FormatSkillName(skillName, verticalAlignment)
-            local skillRankText = FormatSkillRank(skillRank, skillMaxRank, verticalAlignment)
-            local separatorText = ""
-            
-            if verticalAlignment then
-                separatorText = "\t"
-            end
-            
-            tinsert(allSkillsTable, skillIcon .. skillNameText .. separatorText .. skillRankText)
-        end
+    local _, skills = ScanSkillLines()
+    for i = 1, #skills do
+        skills[i].isWeapon = isWeaponSkill(skills[i].name) and true or false
     end
 
-    local separator = verticalAlignment and "\n" or "   "
-    local list = table.concat(allSkillsTable, separator)
-
-    -- Vertical tooltip only (never the bar): a rule under the Titan title, then
-    -- the skill list, a rule, and the Honour Bound Game Studios branding footer.
+    -- Vertical tooltip only (never the bar): the Honour Bound Game Studios
+    -- branding footer under the closing rule.
+    local footer = nil
     if verticalAlignment then
         local logo = "|TInterface\\AddOns\\WeaponJourney\\Media\\HBGS-Logo:14:14|t "
-        local footer = logo .. Colors.LightGray .. "Honour Bound Game Studios" .. Colors.Reset
-        list = TOOLTIP_RULE .. "\n" .. list .. "\n" .. TOOLTIP_RULE .. "\n" .. footer
+        footer = logo .. Colors.LightGray .. "Honour Bound Game Studios" .. Colors.Reset
     end
+
+    local list = Engine.BuildList(skills, {
+        vertical   = verticalAlignment,
+        labels     = TitanGetVar(ADDON_ID, "ShowSkillLabels"),
+        icons      = TitanGetVar(ADDON_ID, "ShowSkillIcons"),
+        largeIcons = TitanGetVar(ADDON_ID, "ShowLargeSkillIcons"),
+        hideMaxed  = TitanGetVar(ADDON_ID, "HideMaxedSkills"),
+        footer     = footer,
+    })
 
     return list
 end

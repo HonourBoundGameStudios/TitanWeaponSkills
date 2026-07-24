@@ -8,4 +8,5 @@
 ## SavedVariables:
 ## OptionalDeps:
 ## Dependencies: Titan
+WeaponJourneyEngine.lua
 WeaponJourney.lua
