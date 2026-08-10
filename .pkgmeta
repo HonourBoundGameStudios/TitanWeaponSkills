@@ -1,9 +1,11 @@
 package-as: WeaponJourney
 
-# The repo is still named TitanWeaponSkills (the CurseForge project id 1309370
-# is tied to it); the shipped addon folder is WeaponJourney. Without package-as
-# the packager would name the folder after the repo and the .toc/Media paths
-# ("Interface\AddOns\WeaponJourney\...") would break in the packaged build.
+# The repo was renamed TitanWeaponSkills -> WeaponJourney on GitHub, and the
+# CurseForge project id (1309370) still ties to it either way. Kept explicit
+# regardless of what the repo happens to be named: without package-as the
+# packager would name the folder after the repo, and if that ever drifts from
+# WeaponJourney again the .toc/Media paths ("Interface\AddOns\WeaponJourney\...")
+# would break in the packaged build.
 
 # Developer-only trees: the offline test suite and its tooling never ship to
 # players (the client would not load them anyway -- they are not in the .toc).
