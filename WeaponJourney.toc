@@ -6,6 +6,7 @@
 ## Author: Honour Bound Game Studios Inc.
 ## X-Curse-Project-ID: 1309370
 ## SavedVariables: WeaponJourneyDB
+## OptionalDeps: LibEmber-1.0
 
 Libs\LibStub.lua
 Libs\CallbackHandler-1.0.lua
