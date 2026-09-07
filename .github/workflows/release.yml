@@ -5,11 +5,31 @@ on:
     tags:
       - '*'
 
+permissions:
+  contents: write   # packager creates a GitHub release from the tag
+
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Lua 5.1
+        run: |
+          sudo apt-get update && sudo apt-get install -y lua5.1
+          sudo ln -sf /usr/bin/lua5.1 /usr/local/bin/lua
+
+      - name: Test gate
+        run: |
+          failed=0
+          for f in Tests/*_test.lua; do
+            echo "== $f"
+            lua "$f" || failed=1
+          done
+          exit $failed
+
       - uses: BigWigsMods/packager@v2
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
