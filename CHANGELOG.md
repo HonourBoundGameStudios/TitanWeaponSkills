@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.3.0] - 2026-09-07
 
 ### Changed
 - **Titan Panel is no longer required.** The addon publishes a LibDataBroker feed, so any LDB display can host it — Titan Panel (through its own LDB bridge), Bazooka, ElvUI DataTexts — and it ships a minimap button for players running no bar at all.

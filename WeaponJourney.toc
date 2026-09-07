@@ -1,6 +1,6 @@
 ## Interface: 11509
 ## Title: |cffeda55fWeapon Journey|r
-## Version: 1.2.0
+## Version: 1.3.0
 ## IconTexture: Interface\Icons\INV_Sword_27
 ## Notes: Tracks your weapon skills on any LibDataBroker display (Titan Panel, Bazooka, ElvUI, ...) or its own minimap button. Formerly TitanWeaponSkills.
 ## Author: Honour Bound Game Studios Inc.
